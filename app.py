@@ -10,7 +10,7 @@ st.title("📊 CDBs Dashboard")
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("cdbs_processed_20250422.csv", parse_dates=["maturity_date"])
+    return pd.read_csv("cdbs_processed.csv", parse_dates=["maturity_date"])
 
 df = load_data()
 
