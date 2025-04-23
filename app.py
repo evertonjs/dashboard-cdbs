@@ -10,7 +10,7 @@ st.title("📊 CDBs Dashboard")
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("cdbs_processed_20250416.csv", parse_dates=["maturity_date"])
+    return pd.read_csv("cdbs_processed_20250422.csv", parse_dates=["maturity_date"])
 
 df = load_data()
 
@@ -54,7 +54,7 @@ def render_card(title, df_tipo):
         rate = row['minTax']
         venc = row['maturity_date'].strftime('%B/%Y')
         st.markdown(f"""
-        <div style="background-color: #f0f8ff; padding: 20px; border-radius: 10px;
+        <div style="background-color: #f8f9fa; color: #000000; padding: 20px; border-radius: 10px;
                     border-left: 5px solid #1f77b4; margin-bottom: 10px; height: 200px;">
             <h4 style="margin-bottom: 5px;">📌 <b>{title}</b></h4>
             <p style="margin: 2px 0;"><strong>🏦 Banco:</strong> {bank}</p>
