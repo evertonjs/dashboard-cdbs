@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import altair as alt
@@ -27,7 +26,13 @@ indexers_options = ["Todos"] + all_indexers
 selected_indexers = st.sidebar.multiselect("Indexador", indexers_options, default=["Todos"])
 filtered_indexers = all_indexers if "Todos" in selected_indexers or not selected_indexers else selected_indexers
 
-# Filtro por vencimento (lado dos cards)
+# Novo Filtro - Rating
+all_ratings = sorted(df['ratingName'].dropna().unique())
+ratings_options = ["Todos"] + all_ratings
+selected_ratings = st.sidebar.multiselect("Rating", ratings_options, default=["Todos"])
+filtered_ratings = all_ratings if "Todos" in selected_ratings or not selected_ratings else selected_ratings
+
+# Filtro por vencimento
 st.sidebar.header("Vencimento")
 
 venc_opcoes = {
@@ -39,8 +44,12 @@ venc_opcoes = {
 venc_sel = st.sidebar.selectbox("Selecione o prazo de vencimento:", list(venc_opcoes.keys()))
 
 # Aplicar filtros combinados
-filtered_df = df[df['bank'].isin(filtered_banks) & df['indexer'].isin(filtered_indexers)]
-filtered_df["days_to_maturity"] = (df["maturity_date"] - pd.Timestamp.today()).dt.days
+filtered_df = df[
+    df['bank'].isin(filtered_banks) &
+    df['indexer'].isin(filtered_indexers) &
+    df['ratingName'].isin(filtered_ratings)
+].copy()
+filtered_df["days_to_maturity"] = (filtered_df["maturity_date"] - pd.Timestamp.today()).dt.days
 min_days, max_days = venc_opcoes[venc_sel]
 filtered_df = filtered_df[(filtered_df["days_to_maturity"] >= min_days) & (filtered_df["days_to_maturity"] <= max_days)]
 
@@ -54,13 +63,13 @@ def render_card(title, df_tipo):
         rate = row['minTax']
         venc = row['maturity_date'].strftime('%B/%Y')
         st.markdown(f"""
-        <div style="background-color: #f8f9fa; color: #000000; padding: 20px; border-radius: 10px;
-                    border-left: 5px solid #1f77b4; margin-bottom: 10px; height: 200px;">
-            <h4 style="margin-bottom: 5px;">📌 <b>{title}</b></h4>
-            <p style="margin: 2px 0;"><strong>🏦 Banco:</strong> {bank}</p>
-            <p style="margin: 2px 0;"><strong>📈 Taxa:</strong> <span style="color:#1f77b4;">{rate:.2f}% a.a.</span></p>
-            <p style="margin: 2px 0;"><strong>📅 Vencimento:</strong> {venc}</p>
-        </div>
+<div style="background-color: #f8f9fa; color: #000000; padding: 20px; border-radius: 10px;
+            border-left: 5px solid #1f77b4; margin-bottom: 10px; height: 200px;">
+    <h4 style="margin-bottom: 5px;">📌 <b>{title}</b></h4>
+    <p style="margin: 2px 0;"><strong>🏦 Banco:</strong> {bank}</p>
+    <p style="margin: 2px 0;"><strong>📈 Taxa:</strong> <span style="color:#1f77b4;">{rate:.2f}% a.a.</span></p>
+    <p style="margin: 2px 0;"><strong>📅 Vencimento:</strong> {venc}</p>
+</div>
         """, unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns(3)
@@ -106,7 +115,7 @@ if not media_rent_df.empty:
 else:
     st.info("Nenhum dado disponível para exibir o gráfico.")
 
-# Tabela de dados (após gráfico)
+# Tabela de dados
 st.subheader("📋 Tabela de CDBs")
 
 cols_ordenadas = [
