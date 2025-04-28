@@ -1,17 +1,37 @@
+
 import streamlit as st
 import pandas as pd
 import altair as alt
 import math
 from datetime import timedelta
+import re
 
 st.set_page_config(page_title="Dashboard CDBs", layout="wide")
 st.title("📊 CDBs Dashboard")
 
+# Nome do arquivo de dados
+file_name = "cdbs_processed_23042025.csv"
+
 @st.cache_data
 def load_data():
-    return pd.read_csv("cdbs_processed.csv", parse_dates=["maturity_date"])
+    return pd.read_csv(file_name, parse_dates=["maturity_date"])
 
 df = load_data()
+
+# Extrair data do nome do arquivo
+match = re.search(r'_(\d{8})\.csv$', file_name)
+if match:
+    data_str = match.group(1)
+    formatted_date = f"{data_str[0:2]}/{data_str[2:4]}/{data_str[4:]}"
+else:
+    formatted_date = "Data desconhecida"
+
+# Badge estilizada
+st.markdown(f"""
+<span style="background-color: #e1f5fe; color: #0277bd; padding: 6px 12px; border-radius: 10px; font-size: 14px;">
+📅 Dados atualizados em {formatted_date}
+</span>
+""", unsafe_allow_html=True)
 
 # Sidebar - Filtros
 st.sidebar.header("Filtros")
@@ -34,7 +54,6 @@ filtered_ratings = all_ratings if "Todos" in selected_ratings or not selected_ra
 
 # Filtro por vencimento
 st.sidebar.header("Vencimento")
-
 venc_opcoes = {
     "⏱️ Até 6 meses": (0, 182),
     "📅 De 6 meses a 1 ano": (183, 365),
@@ -43,7 +62,7 @@ venc_opcoes = {
 }
 venc_sel = st.sidebar.selectbox("Selecione o prazo de vencimento:", list(venc_opcoes.keys()))
 
-# Aplicar filtros combinados
+# Aplicar filtros
 filtered_df = df[
     df['bank'].isin(filtered_banks) &
     df['indexer'].isin(filtered_indexers) &
@@ -53,7 +72,7 @@ filtered_df["days_to_maturity"] = (filtered_df["maturity_date"] - pd.Timestamp.t
 min_days, max_days = venc_opcoes[venc_sel]
 filtered_df = filtered_df[(filtered_df["days_to_maturity"] >= min_days) & (filtered_df["days_to_maturity"] <= max_days)]
 
-# Melhores CDBs por categoria
+# Cards
 st.subheader("🏆 Melhores CDBs do Dia")
 
 def render_card(title, df_tipo):
@@ -81,7 +100,7 @@ with col2:
 with col3:
     render_card("CDB IPCA+", filtered_df[filtered_df['indexer'].str.lower().str.contains("infla")])
 
-# Gráfico interativo: Rentabilidade média por Indexador
+# Gráfico
 st.subheader("📈 Rentabilidade média por Indexador")
 
 media_rent_df = (
@@ -95,16 +114,13 @@ if not media_rent_df.empty:
     y_max_rounded = math.ceil((y_max_raw + 5) / 5) * 5
 
     chart = alt.Chart(media_rent_df).mark_bar().encode(
-        x=alt.X('indexer:N', title='Indexador'),
-        y=alt.Y('avg_return:Q', title='Rentabilidade média (% a.a.)',
-                scale=alt.Scale(domain=[0, y_max_rounded])),
+        x='indexer:N',
+        y=alt.Y('avg_return:Q', scale=alt.Scale(domain=[0, y_max_rounded])),
         tooltip=['indexer', 'avg_return']
     ).properties(width=600, height=400).interactive()
 
     text = alt.Chart(media_rent_df).mark_text(
-        align='center',
-        baseline='bottom',
-        dy=-2
+        align='center', baseline='bottom', dy=-2
     ).encode(
         x='indexer',
         y='avg_return',
@@ -115,7 +131,7 @@ if not media_rent_df.empty:
 else:
     st.info("Nenhum dado disponível para exibir o gráfico.")
 
-# Tabela de dados
+# Tabela
 st.subheader("📋 Tabela de CDBs")
 
 cols_ordenadas = [
