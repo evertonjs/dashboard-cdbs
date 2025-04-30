@@ -10,7 +10,7 @@ st.set_page_config(page_title="Dashboard CDBs", layout="wide")
 st.title("📊 CDBs Dashboard")
 
 # Nome do arquivo de dados
-file_name = "cdbs_processed_29042025.csv"
+file_name = "cdbs_processed_30042025.csv"
 
 @st.cache_data
 def load_data():
