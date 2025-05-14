@@ -4,8 +4,6 @@ import altair as alt
 import math
 from datetime import timedelta
 import re
-import locale
-locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 
 st.set_page_config(page_title="Dashboard CDBs", layout="wide")
 st.title("📊 CDBs Dashboard")
@@ -75,7 +73,15 @@ def render_card(title, df_tipo):
         row = df_tipo.loc[df_tipo['minTax'].idxmax()]
         bank = row['bank']
         rate = row['minTax']
-        venc = row['maturity_date'].strftime('%B/%Y')
+        mes_en = row['maturity_date'].strftime('%B')
+        meses_pt = {
+            'January': 'Janeiro', 'February': 'Fevereiro', 'March': 'Março',
+            'April': 'Abril', 'May': 'Maio', 'June': 'Junho',
+            'July': 'Julho', 'August': 'Agosto', 'September': 'Setembro',
+            'October': 'Outubro', 'November': 'Novembro', 'December': 'Dezembro'
+        }
+        mes_pt = meses_pt.get(mes_en, mes_en)
+        venc = f"{mes_pt}/{row['maturity_date'].year}"
         venc = venc.capitalize()
         st.markdown(f"""
 <div style="background-color: #f8f9fa; color: #000000; padding: 20px; border-radius: 10px;
@@ -146,6 +152,4 @@ nomes_colunas = {
 
 df_exibir = filtered_df[cols_ordenadas].rename(columns=nomes_colunas)
 df_exibir['Vencimento'] = df_exibir['Vencimento'].dt.strftime('%d/%m/%Y')
-# Versão gratuita: apenas visualização. Exportação CSV disponível na versão Pro.
-# st.download_button("📥 Baixar tabela CSV (versão Pro)", data=df_exibir.to_csv(index=False), file_name="cdbs.csv", mime="text/csv")
 st.dataframe(df_exibir, hide_index=True)
