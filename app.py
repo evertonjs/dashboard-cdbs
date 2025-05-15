@@ -1,14 +1,16 @@
+
 import streamlit as st
 import pandas as pd
 import altair as alt
 import math
 from datetime import timedelta
 import re
+import numpy as np
 
 st.set_page_config(page_title="Dashboard CDBs", layout="wide")
 st.title("📊 CDBs Dashboard")
 
-file_name = "cdbs_processed_14052025.csv"
+file_name = "cdbs_processed_15052025.csv"
 
 @st.cache_data
 def load_data():
@@ -33,7 +35,7 @@ st.sidebar.header("Filtros")
 
 all_banks = sorted(df['bank'].dropna().unique())
 banks_options = all_banks
-selected_banks = all_banks  # Mostrar todos por padrão
+selected_banks = all_banks
 
 banks_to_exclude = st.sidebar.multiselect("Excluir bancos", all_banks)
 filtered_banks = [b for b in selected_banks if b not in banks_to_exclude]
@@ -91,10 +93,9 @@ def render_card(title, df_tipo):
     <p style="margin: 2px 0;"><strong>📈 Taxa:</strong> <span style="color:#1f77b4;">{rate:.2f}% a.a.</span></p>
     <p style="margin: 2px 0;"><strong>📅 Vencimento:</strong> {venc}</p>
 </div>
-        """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns(3)
-
 with col1:
     render_card("CDB Pós-fixado", filtered_df[filtered_df['indexer'].str.lower().str.contains("pós")])
 with col2:
@@ -153,3 +154,90 @@ nomes_colunas = {
 df_exibir = filtered_df[cols_ordenadas].rename(columns=nomes_colunas)
 df_exibir['Vencimento'] = df_exibir['Vencimento'].dt.strftime('%d/%m/%Y')
 st.dataframe(df_exibir, hide_index=True)
+
+st.subheader("💰 Simulador de Rendimento")
+
+with st.form("simulador_rendimento_form"):
+    valor_aplicado = st.number_input("Valor a ser investido (R$)", min_value=100.0, step=100.0, value=5000.0)
+    cdi = st.number_input("CDI anual (%)", min_value=0.0, value=10.65, step=0.01)
+    ipca = st.number_input("IPCA anual (%)", min_value=0.0, value=4.5, step=0.01)
+    simular = st.form_submit_button("Simular")
+
+def calcular_ir_regressivo(dias):
+    if dias <= 180:
+        return 0.225
+    elif dias <= 360:
+        return 0.20
+    elif dias <= 720:
+        return 0.175
+    else:
+        return 0.15
+
+def render_simulador_card(nome_indexador, melhor, valor_aplicado, cdi, ipca):
+    taxa_raw = melhor['minTax']
+    indexador = melhor['indexer'].lower()
+
+    if "pós" in indexador:
+        taxa = (taxa_raw / 100) * (cdi / 100)
+    elif "infla" in indexador:
+        taxa = (ipca / 100) + (taxa_raw / 100)
+    else:
+        taxa = taxa_raw / 100
+
+    dias = melhor['days_to_maturity']
+    data_vencimento = melhor['maturity_date'].date()
+    data_hoje = pd.Timestamp.today().date()
+    dias_uteis = np.busday_count(data_hoje, data_vencimento)
+    
+    rendimento_bruto = valor_aplicado * ((1 + taxa) ** (dias_uteis / 252 ) - 1)
+    aliquota_ir = calcular_ir_regressivo(dias)
+    imposto = rendimento_bruto * aliquota_ir
+    rendimento_liquido = rendimento_bruto - imposto
+    valor_total = valor_aplicado + rendimento_liquido
+    vencimento = melhor['maturity_date'].date().strftime('%d/%m/%Y')
+
+    st.markdown(f"""
+<div style="background-color: #f1f8e9; padding: 20px; border-radius: 10px;
+            border-left: 5px solid #7cb342; margin-bottom: 10px; height: auto;">
+    <h4 style="margin-bottom: 5px;">💡 <b>{nome_indexador}</b></h4>
+    <p style="margin: 2px 0;"><strong>🏦 Banco:</strong> {melhor['bank']}</p>
+    <p style="margin: 2px 0;"><strong>📄 Produto:</strong> {melhor['product']}</p>
+    <p style="margin: 2px 0;"><strong>📈 Taxa:</strong> {melhor['minTax']:.2f}% a.a.</p>
+    <p style="margin: 2px 0;"><strong>📆 Vencimento:</strong> {vencimento} ({dias} dias)</p>
+    <hr style="margin: 10px 0;">
+    <p style="margin: 2px 0;"><strong>💵 Rendimento bruto:</strong> R$ {rendimento_bruto:,.2f}</p>
+    <p style="margin: 2px 0;"><strong>🧾 IR ({aliquota_ir*100:.1f}%):</strong> R$ {imposto:,.2f}</p>
+    <p style="margin: 2px 0;"><strong>💰 Rendimento líquido:</strong> R$ {rendimento_liquido:,.2f}</p>
+    <p style="margin: 2px 0;"><strong>📊 Valor final líquido:</strong> <b>R$ {valor_total:,.2f}</b></p>
+</div>
+""", unsafe_allow_html=True)
+
+if simular:
+    st.markdown("### 📊 Resultados da Simulação")
+    tipos = [
+        ("CDB Pós-fixado", filtered_df[filtered_df['indexer'].str.lower().str.contains("pós")]),
+        ("CDB Prefixado", filtered_df[filtered_df['indexer'].str.lower().str.contains("pré")]),
+        ("CDB IPCA+", filtered_df[filtered_df['indexer'].str.lower().str.contains("infla")]),
+    ]
+    col1, col2, col3 = st.columns(3)
+    colunas = [col1, col2, col3]
+    for i, (nome_indexador, df_tipo) in enumerate(tipos):
+        with colunas[i]:
+            if not df_tipo.empty:
+                melhor = df_tipo.loc[df_tipo['minTax'].idxmax()]
+                render_simulador_card(nome_indexador, melhor, valor_aplicado, cdi, ipca)
+            else:
+                st.warning(f"Nenhum CDB disponível para o tipo {nome_indexador}.")
+                
+with st.expander("ℹ️ Tabela de Imposto de Renda (IR) regressivo para CDBs"):
+    st.markdown("""
+    | Dias até o vencimento | Alíquota de IR |
+    |------------------------|----------------|
+    | Até 180 dias           | 22,5%          |
+    | De 181 a 360 dias      | 20,0%          |
+    | De 361 a 720 dias      | 17,5%          |
+    | Acima de 720 dias      | 15,0%          |
+
+    A alíquota do imposto de renda é aplicada somente sobre o rendimento bruto.
+    """)
+
