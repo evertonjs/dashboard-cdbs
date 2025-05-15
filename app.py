@@ -159,8 +159,21 @@ st.subheader("💰 Simulador de Rendimento")
 
 with st.form("simulador_rendimento_form"):
     valor_aplicado = st.number_input("Valor a ser investido (R$)", min_value=100.0, step=100.0, value=5000.0)
-    cdi = st.number_input("CDI anual (%)", min_value=0.0, value=10.65, step=0.01)
-    ipca = st.number_input("IPCA anual (%)", min_value=0.0, value=4.5, step=0.01)
+    cdi = st.number_input(
+        "CDI anual (%) - Informe a média do CDI dos últimos 12 meses ou a projeção para o período.",
+        min_value=0.0,
+        value=10.65,
+        step=0.01,
+        #help="Informe a média do CDI dos últimos 12 meses ou a projeção para o período."
+    )
+
+    ipca = st.number_input(
+        "IPCA anual (%) - Informe a média do IPCA dos últimos 12 meses ou a expectativa de inflação para o período.",
+        min_value=0.0,
+        value=4.5,
+        step=0.01,
+        #help="Informe a média do IPCA dos últimos 12 meses ou a expectativa de inflação para o período."
+    )
     simular = st.form_submit_button("Simular")
 
 def calcular_ir_regressivo(dias):
