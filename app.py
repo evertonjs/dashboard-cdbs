@@ -209,9 +209,12 @@ def render_simulador_card(nome_indexador, melhor, valor_aplicado, cdi, ipca):
     valor_total = valor_aplicado + rendimento_liquido
     vencimento = melhor['maturity_date'].date().strftime('%d/%m/%Y')
 
+##<div style="background-color: #f8f9fa; color: #000000; padding: 20px; border-radius: 10px;
+##            border-left: 5px solid #1f77b4; margin-bottom: 10px; height: 200px;">
+
     st.markdown(f"""
-<div style="background-color: #f1f8e9; padding: 20px; border-radius: 10px;
-            border-left: 5px solid #7cb342; margin-bottom: 10px; height: auto;">
+<div style="background-color: #f1f8e9; color: #000000; padding: 20px; border-radius: 10px;
+            border-left: 5px solid #1f77b4; margin-bottom: 10px; height: auto;">
     <h4 style="margin-bottom: 5px;">💡 <b>{nome_indexador}</b></h4>
     <p style="margin: 2px 0;"><strong>🏦 Banco:</strong> {melhor['bank']}</p>
     <p style="margin: 2px 0;"><strong>📄 Produto:</strong> {melhor['product']}</p>
