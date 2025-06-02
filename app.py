@@ -13,7 +13,7 @@ st.set_page_config(page_title="Dashboard CDBs", layout="wide")
 st.markdown("""
 <div style="background-color: #ffebee; color: #b71c1c; padding: 12px 20px; border-radius: 10px; border-left: 5px solid #b71c1c; font-size: 16px; margin-bottom: 20px; position: sticky; top: 0; z-index: 999;">
 🚨 <strong>Atenção:</strong> Este dashboard não está mais sendo atualizado e será descontinuado em breve.<br>
-Acesse a nova versão do dashboard no seguinte link: <a href="https://novo-dashboard-cdbs.streamlit.app" target="_blank" style="color:#b71c1c; font-weight:bold;">https://novo-dashboard-cdbs.streamlit.app</a>.
+Acesse a nova versão do dashboard no seguinte link: <a href="https://cdb-insight-dashboard.lovable.app/" target="_blank" style="color:#b71c1c; font-weight:bold;">https://novo-dashboard-cdbs.streamlit.app</a>.
 </div>
 """, unsafe_allow_html=True)
 
