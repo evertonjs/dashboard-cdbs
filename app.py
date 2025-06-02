@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import altair as alt
@@ -7,9 +6,21 @@ from datetime import timedelta
 import re
 import numpy as np
 
+# Configuração da página
 st.set_page_config(page_title="Dashboard CDBs", layout="wide")
+
+# Alerta fixo no topo da página
+st.markdown("""
+<div style="background-color: #ffebee; color: #b71c1c; padding: 12px 20px; border-radius: 10px; border-left: 5px solid #b71c1c; font-size: 16px; margin-bottom: 20px; position: sticky; top: 0; z-index: 999;">
+🚨 <strong>Atenção:</strong> Este dashboard não está mais sendo atualizado e será descontinuado em breve.<br>
+Acesse a nova versão do dashboard no seguinte link: <a href="https://novo-dashboard-cdbs.streamlit.app" target="_blank" style="color:#b71c1c; font-weight:bold;">https://novo-dashboard-cdbs.streamlit.app</a>.
+</div>
+""", unsafe_allow_html=True)
+
+# Título principal
 st.title("📊 CDBs Dashboard")
 
+# Nome do arquivo CSV
 file_name = "cdbs_processed_02062025.csv"
 
 @st.cache_data
@@ -18,6 +29,7 @@ def load_data():
 
 df = load_data()
 
+# Data de atualização
 match = re.search(r'_(\d{8})\.csv$', file_name)
 if match:
     data_str = match.group(1)
@@ -208,9 +220,6 @@ def render_simulador_card(nome_indexador, melhor, valor_aplicado, cdi, ipca):
     rendimento_liquido = rendimento_bruto - imposto
     valor_total = valor_aplicado + rendimento_liquido
     vencimento = melhor['maturity_date'].date().strftime('%d/%m/%Y')
-
-##<div style="background-color: #f8f9fa; color: #000000; padding: 20px; border-radius: 10px;
-##            border-left: 5px solid #1f77b4; margin-bottom: 10px; height: 200px;">
 
     st.markdown(f"""
 <div style="background-color: #f1f8e9; color: #000000; padding: 20px; border-radius: 10px;
